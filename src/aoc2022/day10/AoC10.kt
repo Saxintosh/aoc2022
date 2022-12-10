@@ -2,37 +2,43 @@ package aoc2022.day10
 
 import readLines
 
+sealed class Instruction {
+	companion object {
+		fun from(line: String): Instruction {
+			val s = line.split(" ")
+			return when (s[0]) {
+				"noop" -> Noop
+				"addx" -> AddX(s[1].toInt())
+				else   -> TODO()
+			}
+		}
+	}
+}
+
+object Noop : Instruction()
+class AddX(val n: Int) : Instruction()
+
 class Cpu(private val prg: List<String>, val peekBlock: Cpu.() -> Unit) {
 	var x = 1
-	var cycle = 1
+	var cycle = 0
 
-	private var longAdd: Int? = null
+	// Current instruction register
+	private var cir: Instruction = Noop
+
+	// Program Counter
 	private var pc = 0
 
 	private fun doCycle() {
-		peekBlock(this)
 		cycle++
+		peekBlock(this)
 
-		val somethingToAdd = longAdd
-		if (somethingToAdd != null) {
-			x += somethingToAdd
-			longAdd = null
-			return
+		when (val thisCir = cir) {
+			Noop    -> cir = Instruction.from(prg[pc++])
+			is AddX -> x += thisCir.n.also { cir = Noop }
 		}
-
-		val s = prg[pc++].split(" ")
-		if (s[0] == "addx")
-			longAdd = s[1].toInt()
-	}
-
-	private fun reset() {
-		x = 1
-		cycle = 1
-		longAdd = null
 	}
 
 	fun run() {
-		reset()
 		while (pc < prg.size)
 			doCycle()
 	}
@@ -72,7 +78,7 @@ fun main() {
 	fun part1(lines: List<String>): Int {
 		var signalStrength = 0
 		Cpu(lines) {
-			if ((cycle + 20) % 40 == 0)
+			if (cycle % 40 == 20)
 				signalStrength += cycle * x
 		}.run()
 
