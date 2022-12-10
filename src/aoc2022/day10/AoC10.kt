@@ -9,7 +9,7 @@ sealed class Instruction {
 			return when (s[0]) {
 				"noop" -> Noop
 				"addx" -> AddX(s[1].toInt())
-				else   -> TODO()
+				else   -> throw Exception("Unexpected")
 			}
 		}
 	}
