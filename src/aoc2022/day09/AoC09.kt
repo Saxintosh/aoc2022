@@ -3,7 +3,12 @@ package aoc2022.day09
 import readLines
 import kotlin.math.abs
 
-data class P(val x: Int, val y: Int)
+data class P(val x: Int, val y: Int) {
+	fun up() = P(x + 1, y)
+	fun down() = P(x - 1, y)
+	fun left() = P(x, y - 1)
+	fun right() = P(x, y + 1)
+}
 
 class Board(private val len: Int) {
 	private var rope = Array(len) { P(0, 0) }
@@ -13,28 +18,7 @@ class Board(private val len: Int) {
 			rope[0] = p
 		}
 	private val tail get() = rope.last()
-
-	val set = HashSet<P>().apply { add(tail) }
-
-	private fun up() {
-		head = P(head.x, head.y + 1)
-		moveTails()
-	}
-
-	private fun down() {
-		head = P(head.x, head.y - 1)
-		moveTails()
-	}
-
-	private fun left() {
-		head = P(head.x - 1, head.y)
-		moveTails()
-	}
-
-	private fun right() {
-		head = P(head.x + 1, head.y)
-		moveTails()
-	}
+	val tailSet = HashSet<P>().apply { add(tail) }
 
 	private fun moveTails() {
 		for (k in 1 until len) {
@@ -49,33 +33,33 @@ class Board(private val len: Int) {
 				continue
 			}
 
-			// only one (dx or dy) is == |2|
+			// solo uno è a 2
 			when {
-				dx == 2  -> rope[k] = P(rope[k - 1].x - 1, rope[k - 1].y)
-				dx == -2 -> rope[k] = P(rope[k - 1].x + 1, rope[k - 1].y)
-				dy == 2  -> rope[k] = P(rope[k - 1].x, rope[k - 1].y - 1)
-				dy == -2 -> rope[k] = P(rope[k - 1].x, rope[k - 1].y + 1)
+				dx == 2  -> rope[k] = rope[k - 1].down()
+				dx == -2 -> rope[k] = rope[k - 1].up()
+				dy == 2  -> rope[k] = rope[k - 1].left()
+				dy == -2 -> rope[k] = rope[k - 1].right()
 			}
 		}
-		set.add(tail)
+		tailSet.add(tail)
 	}
 
 	fun process(line: String, draw: Boolean = false) {
 		val (p1, p2) = line.split(" ")
 		val rep = p2.toInt()
 		when (p1) {
-			"U" -> repeat(rep) { up() }
-			"D" -> repeat(rep) { down() }
-			"L" -> repeat(rep) { left() }
-			"R" -> repeat(rep) { right() }
+			"U" -> repeat(rep) { head = head.up(); moveTails() }
+			"D" -> repeat(rep) { head = head.down(); moveTails() }
+			"L" -> repeat(rep) { head = head.left(); moveTails() }
+			"R" -> repeat(rep) { head = head.right(); moveTails() }
 		}
+
 		if (draw)
 			draw()
 	}
 
-	@Suppress("MemberVisibilityCanBePrivate")
 	fun draw() {
-		val fullSet = set.plus(rope)
+		val fullSet = tailSet.plus(rope)
 		val xr = fullSet.minOf { it.x }..fullSet.maxOf { it.x }
 		val yr = fullSet.maxOf { it.y } downTo fullSet.minOf { it.y }
 
@@ -83,11 +67,11 @@ class Board(private val len: Int) {
 			for (x in xr) {
 				val curr = P(x, y)
 				val ch = when {
-					curr == head     -> "H"
-					curr in rope     -> rope.indexOfFirst { it == curr }.toString()
-					0 == x && 0 == y -> "s"
-					P(x, y) in set   -> "#"
-					else             -> "."
+					curr == head       -> "H"
+					curr in rope       -> rope.indexOfFirst { it == curr }.toString()
+					0 == x && 0 == y   -> "s"
+					P(x, y) in tailSet -> "#"
+					else               -> "."
 				}
 				print(ch)
 			}
@@ -100,19 +84,19 @@ class Board(private val len: Int) {
 
 fun main() {
 
-
 	fun part1(lines: List<String>): Int {
 		val b = Board(2)
 		lines.forEach(b::process)
-		return b.set.count()
+		return b.tailSet.count()
 	}
 
 	fun part2(lines: List<String>): Int {
 		val b = Board(10)
 		lines.forEach(b::process)
-		return b.set.count()
+		return b.tailSet.count()
 	}
 
 
+//	readLines(13, 1, ::part1, ::part2)
 	readLines(88, 36, ::part1, ::part2)
 }
